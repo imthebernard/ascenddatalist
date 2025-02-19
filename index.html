@@ -128,10 +128,10 @@
 <body class="roboto-regular">
     <div class="content">
         <div class="heading">
-          <div>
-            <img src="Ascend-Logo.png" alt="logo" />
+            <div>
+              <img src="Ascend-Logo.png" alt="logo" id="logoClick"/>
+            </div>
           </div>
-        </div>
         <table id="table1">
           <tr>
               <td>91APP SDN BHD</td>
@@ -1892,7 +1892,6 @@
             for (let i = 0; i < tables.length; i++) {
                 const tds = tables[i].querySelectorAll('td');
                 for (let td of tds) {
-                    // Check if the text content starts with the search term (case-insensitive)
                     if (td.textContent.toLowerCase().startsWith(searchTerm.toLowerCase())) {
                         currentIndex = i;
                         tables.forEach(table => table.classList.add('hidden'));
@@ -1916,8 +1915,8 @@
             searchAndDisplay(searchTerm);
         });
 
-        // Show search form on double click
-        document.querySelector('body').addEventListener('dblclick', function() {
+        // Show search form on click on logo
+        document.getElementById('logoClick').addEventListener('click', function() {
             const searchForm = document.getElementById('searchForm');
             if (searchForm.style.display === 'none') {
                 searchForm.style.display = 'block';
