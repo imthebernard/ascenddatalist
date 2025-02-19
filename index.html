@@ -13,6 +13,14 @@
 
     <style>
 
+        /* Style for the search form, initially hidden */
+        #searchForm {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+        }
+
         .roboto-regular {
           font-family: "Roboto", system-ui;
           font-weight: 400;
@@ -1851,22 +1859,74 @@
 
   
         Add additional tables as needed -->
+
+        <!-- Search form, initially hidden -->
+        <form id="searchForm">
+            <input type="text" id="searchInput" placeholder="Search for company...">
+            <button type="submit">Search</button>
+        </form>
     </div>
 
     <script>
-        // Get all the tables
         const tables = document.querySelectorAll('.content table');
         let currentIndex = 0;
+        let autoScroll;
 
         function showNextTable() {
             tables[currentIndex].classList.add('hidden');
-
             currentIndex = (currentIndex + 1) % tables.length;
-
             tables[currentIndex].classList.remove('hidden');
         }
 
-        setInterval(showNextTable, 7000); 
+        function startAutoScroll() {
+            autoScroll = setInterval(showNextTable, 7000);
+        }
+
+        function stopAutoScroll() {
+            clearInterval(autoScroll);
+            setTimeout(startAutoScroll, 5 * 60 * 1000); // Resume after 5 minutes
+        }
+
+        function searchAndDisplay(searchTerm) {
+            let found = false;
+            for (let i = 0; i < tables.length; i++) {
+                const tds = tables[i].querySelectorAll('td');
+                for (let td of tds) {
+                    // Check if the text content starts with the search term (case-insensitive)
+                    if (td.textContent.toLowerCase().startsWith(searchTerm.toLowerCase())) {
+                        currentIndex = i;
+                        tables.forEach(table => table.classList.add('hidden'));
+                        tables[currentIndex].classList.remove('hidden');
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+            if (found) {
+                stopAutoScroll();
+            } else {
+                alert('Company not found in tables.');
+            }
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const searchTerm = document.getElementById('searchInput').value;
+            searchAndDisplay(searchTerm);
+        });
+
+        // Show search form on double click
+        document.querySelector('body').addEventListener('dblclick', function() {
+            const searchForm = document.getElementById('searchForm');
+            if (searchForm.style.display === 'none') {
+                searchForm.style.display = 'block';
+            } else {
+                searchForm.style.display = 'none';
+            }
+        });
+
+        startAutoScroll(); // Start the auto scroll when the page loads
     </script>
 </body>
 </html>
