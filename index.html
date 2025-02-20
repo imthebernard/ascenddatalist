@@ -2083,58 +2083,84 @@
     </div>
 
     <script>
-        const tables = document.querySelectorAll('.content table');
-        let currentIndex = 0;
-        let autoScroll;
-    
-        function showNextTable() {
-            tables[currentIndex].classList.add('hidden');
-            currentIndex = (currentIndex + 1) % tables.length;
-            tables[currentIndex].classList.remove('hidden');
-        }
-    
-        function showPreviousTable() {
-            tables[currentIndex].classList.add('hidden');
-            currentIndex = (currentIndex - 1 + tables.length) % tables.length; // Use modulus to wrap around to the last table if at the first
-            tables[currentIndex].classList.remove('hidden');
-        }
-    
-        function startAutoScroll() {
-            autoScroll = setInterval(showNextTable, 7000);
-        }
-    
-        function stopAutoScroll() {
-            clearInterval(autoScroll);
-            document.getElementById('navButtons').style.display = 'block';
-        }
-    
-        function resumeAutoScroll() {
-            // Remove highlights before resuming scroll
-            document.querySelectorAll('.highlight').forEach(el => {
-                el.outerHTML = el.innerHTML;
-            });
-            
-            startAutoScroll();
-            document.getElementById('navButtons').style.display = 'none';
-            document.getElementById('searchForm').style.display = 'none'; // Hide the search form
-        }
-    
-        function searchAndDisplay(searchTerm) {
-            // Remove previous highlights
-            document.querySelectorAll('.highlight').forEach(el => {
-                el.outerHTML = el.innerHTML;
-            });
-    
-            let found = false;
-            
-            // If search term is only one character, match only at the start
-            if (searchTerm.length === 1) {
+    const tables = document.querySelectorAll('.content table');
+    let currentIndex = 0;
+    let autoScroll;
+
+    function showNextTable() {
+        tables[currentIndex].classList.add('hidden');
+        currentIndex = (currentIndex + 1) % tables.length;
+        tables[currentIndex].classList.remove('hidden');
+        updateOverlayPosition();
+    }
+
+    function showPreviousTable() {
+        tables[currentIndex].classList.add('hidden');
+        currentIndex = (currentIndex - 1 + tables.length) % tables.length; // Use modulus to wrap around to the last table if at the first
+        tables[currentIndex].classList.remove('hidden');
+        updateOverlayPosition();
+    }
+
+    function startAutoScroll() {
+        autoScroll = setInterval(showNextTable, 7000);
+    }
+
+    function stopAutoScroll() {
+        clearInterval(autoScroll);
+        document.getElementById('navButtons').style.display = 'block';
+    }
+
+    function resumeAutoScroll() {
+        // Remove highlights before resuming scroll
+        document.querySelectorAll('.highlight').forEach(el => {
+            el.outerHTML = el.innerHTML;
+        });
+        
+        startAutoScroll();
+        document.getElementById('navButtons').style.display = 'none';
+        document.getElementById('searchForm').style.display = 'none'; // Hide the search form
+    }
+
+    function searchAndDisplay(searchTerm) {
+        // Remove previous highlights
+        document.querySelectorAll('.highlight').forEach(el => {
+            el.outerHTML = el.innerHTML;
+        });
+
+        let found = false;
+        
+        // If search term is only one character, match only at the start
+        if (searchTerm.length === 1) {
+            for (let i = 0; i < tables.length; i++) {
+                const tds = tables[i].querySelectorAll('td');
+                for (let td of tds) {
+                    let text = td.textContent.toLowerCase();
+                    if (text.startsWith(searchTerm.toLowerCase())) {
+                        td.innerHTML = `<span class="highlight">${td.textContent}</span>`;
+                        currentIndex = i;
+                        tables.forEach(table => table.classList.add('hidden'));
+                        tables[currentIndex].classList.remove('hidden');
+                        found = true;
+                        break; // Stop looking after finding the first match
+                    }
+                }
+                if (found) break; // Break loop if match found
+            }
+        } else {
+            // For longer search terms, match from longest to shortest substring
+            for (let length = searchTerm.length; length > 0; length--) {
+                let substring = searchTerm.slice(0, length).toLowerCase();
+                
                 for (let i = 0; i < tables.length; i++) {
                     const tds = tables[i].querySelectorAll('td');
                     for (let td of tds) {
                         let text = td.textContent.toLowerCase();
-                        if (text.startsWith(searchTerm.toLowerCase())) {
-                            td.innerHTML = `<span class="highlight">${td.textContent}</span>`;
+                        if (text.includes(substring)) {
+                            let originalText = td.innerHTML;
+                            let searchRegex = new RegExp(substring, 'gi');
+                            let highlightedText = originalText.replace(searchRegex, match => `<span class="highlight">${match}</span>`);
+                            td.innerHTML = highlightedText;
+                            
                             currentIndex = i;
                             tables.forEach(table => table.classList.add('hidden'));
                             tables[currentIndex].classList.remove('hidden');
@@ -2144,64 +2170,56 @@
                     }
                     if (found) break; // Break loop if match found
                 }
-            } else {
-                // For longer search terms, match from longest to shortest substring
-                for (let length = searchTerm.length; length > 0; length--) {
-                    let substring = searchTerm.slice(0, length).toLowerCase();
-                    
-                    for (let i = 0; i < tables.length; i++) {
-                        const tds = tables[i].querySelectorAll('td');
-                        for (let td of tds) {
-                            let text = td.textContent.toLowerCase();
-                            if (text.includes(substring)) {
-                                let originalText = td.innerHTML;
-                                let searchRegex = new RegExp(substring, 'gi');
-                                let highlightedText = originalText.replace(searchRegex, match => `<span class="highlight">${match}</span>`);
-                                td.innerHTML = highlightedText;
-                                
-                                currentIndex = i;
-                                tables.forEach(table => table.classList.add('hidden'));
-                                tables[currentIndex].classList.remove('hidden');
-                                found = true;
-                                break; // Stop looking after finding the first match
-                            }
-                        }
-                        if (found) break; // Break loop if match found
-                    }
-                    if (found) break; // Break if a match was found in the outer loop
-                }
-            }
-    
-            if (found) {
-                stopAutoScroll();
+                if (found) break; // Break if a match was found in the outer loop
             }
         }
-    
-        document.getElementById('searchForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const searchTerm = document.getElementById('searchInput').value;
-            searchAndDisplay(searchTerm);
-        });
-    
-        // Show search form on click on logo
-        document.getElementById('logoClick').addEventListener('click', function() {
-            const searchForm = document.getElementById('searchForm');
-            const navButtons = document.getElementById('navButtons');
-            if (searchForm.style.display === 'none' && navButtons.style.display !== 'block') {
-                searchForm.style.display = 'block';
-                // Don't stop auto-scrolling here since it's not triggered by a search
-            } else {
-                searchForm.style.display = 'none';
-            }
-        });
-    
-        // Navigation controls
-        document.getElementById('nextButton').addEventListener('click', showNextTable);
-        document.getElementById('prevButton').addEventListener('click', showPreviousTable);
-        document.getElementById('resumeButton').addEventListener('click', resumeAutoScroll);
-    
-        startAutoScroll(); // Start the auto scroll when the page loads
-    </script>
+
+        if (found) {
+            stopAutoScroll();
+        }
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const searchTerm = document.getElementById('searchInput').value;
+        searchAndDisplay(searchTerm);
+    });
+
+    // Show search form on click on logo and focus on input
+    document.getElementById('logoClick').addEventListener('click', function() {
+        const searchForm = document.getElementById('searchForm');
+        const navButtons = document.getElementById('navButtons');
+        if (searchForm.style.display === 'none' && navButtons.style.display !== 'block') {
+            searchForm.style.display = 'block';
+            document.getElementById('searchInput').focus(); // Focus on the search input
+            // Don't stop auto-scrolling here since it's not triggered by a search
+        } else {
+            searchForm.style.display = 'none';
+        }
+    });
+
+    // Navigation controls
+    document.getElementById('nextButton').addEventListener('click', showNextTable);
+    document.getElementById('prevButton').addEventListener('click', showPreviousTable);
+    document.getElementById('resumeButton').addEventListener('click', resumeAutoScroll);
+
+    // Placeholder for updateOverlayPosition if you're using it
+    function updateOverlayPosition() {
+        const overlay = document.querySelector('.registered-office-overlay');
+        const currentTable = tables[currentIndex];
+        if (currentTable.id !== 'table17') {
+            overlay.style.display = 'block';
+            overlay.textContent = 'Registered Office';
+            const tableRect = currentTable.getBoundingClientRect();
+            overlay.style.top = `${tableRect.top + window.scrollY}px`;
+            overlay.style.left = `${tableRect.left + window.scrollX + tableRect.width / 2}px`;
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
+
+    startAutoScroll(); // Start the auto scroll when the page loads
+</script>
 </body>
 </html>
 
